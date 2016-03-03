@@ -1,0 +1,10 @@
+{
+    "name": "gir-d-generator",
+    "description": "Generate D bindings from GIR.",
+    "copyright": "Copyright © 2016, Matthias Klumpp",
+    "authors": ["Mike Wey",
+                "Matthias Klumpp"],
+
+    "targetPath": "build",
+    "buildRequirements": ["disallowDeprecations"],
+}
