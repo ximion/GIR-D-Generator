@@ -340,8 +340,7 @@ class GirPackage
 		buff ~= "import std.stdio;\n";
 		buff ~= "import "~ bindDir ~"."~ name ~"types;\n";
 
-		if ( name == "glib" )
-			buff ~= "import gi.gobjecttypes;\n";
+		buff ~= "import gi.gobjecttypes;\n";
 		if ( name == "gdk" || name == "pango" )
 			buff ~= "import gi.cairotypes;\n";
 
@@ -390,12 +389,12 @@ class GirPackage
 		buff ~= "}\n\n";
 
 		// FIXME MAK
-		foreach ( strct; collectedStructs )
-		{
-			if ( strct.functions.empty || strct.noExternal )
-				continue;
+		//foreach ( strct; collectedStructs )
+		//{
+		//	if ( strct.functions.empty || strct.noExternal )
+		//		continue;
 
-			buff ~= "\n// "~ name ~"."~ strct.name ~"\n\n";
+		//	buff ~= "\n// "~ name ~"."~ strct.name ~"\n\n";
 
 		//	foreach ( funct; strct.functions )
 		//	{
@@ -407,7 +406,7 @@ class GirPackage
 		//		else
 		//			buff ~= "alias c_"~ funct.cType ~" "~ funct.cType ~";\n";
 		//	}
-		}
+		//}
 
 		std.file.write(buildPath(wrapper.outputRoot, srcDir, bindDir, name ~".d"), buff);
 	}
