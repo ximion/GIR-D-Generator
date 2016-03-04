@@ -25,6 +25,8 @@ import std.file;
 import std.uni;
 import std.path;
 import std.stdio;
+import std.getopt;
+import core.stdc.stdlib;
 
 import gtd.DefReader;
 import gtd.IndentedStringBuilder;
@@ -36,17 +38,36 @@ import gtd.WrapError;
 
 void main(string[] args)
 {
-	auto wrapper = new GirWrapper("./");
-	wrapper.proccess("APILookup.txt");
+	bool optHelp;
+	bool printFree;
+	string inputDir = getcwd();
+	string outputDir;
 
-	if ( args.length > 1 && args[1].among("-f", "--print-free") )
+	// parse command-line options
+	try {
+		getopt (args,
+			"help|h", &optHelp,
+			"indir|i", &inputDir,
+			"outdir|o", &outputDir,
+			"print-free", &printFree);
+	} catch (Exception e) {
+		writeln ("Unable to parse parameters: ", e.msg);
+		exit (1);
+	}
+
+	auto wrapper = new GirWrapper(inputDir, outputDir);
+	try {
+		wrapper.proccess("APILookup.txt");
+	} catch (Exception e) {
+		writeln("Failed to create D bindings: ", e.msg);
+		exit(2);
+	}
+
+	if (printFree)
 		wrapper.printFreeFunctions();
 
 	foreach(pack; GirWrapper.packages)
 	{
-		if ( pack.name == "cairo" )
-			continue;
-
 		pack.writeTypes();
 		pack.writeLoaderTable();
 		pack.writeClasses();
@@ -58,7 +79,6 @@ class GirWrapper
 	bool includeComments;
 
 	string apiRoot;
-	string inputRoot;
 	string outputRoot;
 	string srcDir;
 	string bindDir;
@@ -68,9 +88,13 @@ class GirWrapper
 
 	static GirPackage[string] packages;
 
-	public this(string apiRoot)
+	public this(string apiRoot, string outputRoot)
 	{
 		this.apiRoot = apiRoot;
+		this.outputRoot = outputRoot;
+		if (outputRoot.empty)
+			this.outputRoot = buildPath (apiRoot, "out");
+		srcDir = ".";
 	}
 
 	public void proccess(string apiLookupDefinition)
@@ -89,12 +113,6 @@ class GirWrapper
 					break;
 				case "alias":
 					loadAA(aliasses, defReader);
-					break;
-				case "inputRoot":
-					inputRoot = defReader.value;
-					break;
-				case "outputRoot":
-					outputRoot = defReader.value;
 					break;
 				case "srcDir":
 					srcDir = defReader.value;
@@ -122,14 +140,12 @@ class GirWrapper
 					proccess(defReader.value);
 					break;
 				case "wrap":
-					if ( inputRoot.empty )
-						throw new WrapError(defReader, "Found wrap while inputRoot isn't set");
 					if ( outputRoot.empty )
 						throw new WrapError(defReader, "Found wrap while outputRoot isn't set");
 					if ( srcDir.empty )
 						throw new WrapError(defReader, "Found wrap while srcDir isn't set");
 					if ( bindDir.empty )
-						throw new WrapError(defReader, "Found wrap while bindDir isn't set");
+						bindDir = "gi";
 
 					wrapPackage(defReader);
 					break;
